@@ -1,0 +1,13 @@
+{
+  "fields": {
+    "link": {
+      "converter": "\\Import\\Types\\Simple\\FieldConverters\\Link"
+    },
+    "jsonArray": {
+      "converter": "\\Import\\Types\\Simple\\FieldConverter\\JsonArray"
+    },
+    "linkMultiple": {
+      "converter": "\\Import\\Types\\Simple\\FieldConverter\\LinkMultiple"
+    }
+  }
+}
