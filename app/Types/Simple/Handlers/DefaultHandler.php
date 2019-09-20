@@ -52,16 +52,14 @@ class DefaultHandler extends AbstractHandler
             // prepare id
             if ($data['action'] == 'create') {
                 $id = null;
-            }
-            if ($data['action'] == 'update') {
+            } elseif ($data['action'] == 'update') {
                 if (isset($exists[$row[$idRow['column']]])) {
                     $id = $exists[$row[$idRow['column']]];
                 } else {
                     // skip row if such item does not exist
                     continue 1;
                 }
-            }
-            if ($data['action'] == 'create_update') {
+            } elseif ($data['action'] == 'create_update') {
                 $id = (isset($exists[$row[$idRow['column']]])) ? $exists[$row[$idRow['column']]] : null;
             }
 
@@ -73,7 +71,10 @@ class DefaultHandler extends AbstractHandler
                 $this->getEntityManager()->getPDO()->beginTransaction();
 
                 // prepare row
-                $input = $this->prepareRow($row, $data);
+                $input = new \stdClass();
+                foreach ($data['data']['configuration'] as $item) {
+                    $this->convertItem($input, $entityType, $item, $row, $data['data']['delimiter']);
+                }
 
                 if (empty($id)) {
                     $entity = $service->createEntity($input);
@@ -100,27 +101,5 @@ class DefaultHandler extends AbstractHandler
         }
 
         return true;
-    }
-
-    /**
-     * Prepare row for saving
-     *
-     * @param array $row
-     * @param array $data
-     *
-     * @return \stdClass
-     * @throws Error
-     */
-    protected function prepareRow(array $row, array $data): \stdClass
-    {
-        // create row
-        $inputRow = new \stdClass();
-
-        // prepare row
-        foreach ($data['data']['configuration'] as $item) {
-            $this->convertItem($inputRow, (string)$data['data']['entity'], $item, $row, $data['data']['delimiter']);
-        }
-
-        return $inputRow;
     }
 }
