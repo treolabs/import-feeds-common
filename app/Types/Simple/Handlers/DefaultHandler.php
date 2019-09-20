@@ -20,11 +20,6 @@ class DefaultHandler extends AbstractHandler
      */
     public function run(array $fileData, array $data): bool
     {
-        // get prepared rows
-        if (empty($rows = $this->prepareRows($fileData, $data))) {
-            return true;
-        }
-
         // prepare entity type
         $entityType = (string)$data['data']['entity'];
 
@@ -34,23 +29,49 @@ class DefaultHandler extends AbstractHandler
         // create service
         $service = $this->getServiceFactory()->create($entityType);
 
+        // prepare id field
+        $idField = isset($data['data']['idField']) ? $data['data']['idField'] : null;
+
+        // find ID row
+        $idRow = $this->getIdRow($data['data']['configuration'], $idField);
+
+        // find exists if it needs
+        $exists = [];
+        if (in_array($data['action'], ['update', 'create_update']) && !empty($idRow)) {
+            $exists = $this->getExists($entityType, $idRow['name'], array_column($fileData, $idRow['column']));
+        }
+
+        // prepare file row
+        $fileRow = (int)$data['offset'];
+
         // save
-        foreach ($rows as $input) {
+        foreach ($fileData as $row) {
+            // increment file row number
+            $fileRow++;
+
+            // prepare id
+            if ($data['action'] == 'create') {
+                $id = null;
+            }
+            if ($data['action'] == 'update') {
+                if (isset($exists[$row[$idRow['column']]])) {
+                    $id = $exists[$row[$idRow['column']]];
+                } else {
+                    // skip row if such item does not exist
+                    continue 1;
+                }
+            }
+            if ($data['action'] == 'create_update') {
+                $id = (isset($exists[$row[$idRow['column']]])) ? $exists[$row[$idRow['column']]] : null;
+            }
+
             // prepare entity
             $entity = null;
 
-            // prepare id
-            $id = $input->_id;
-            unset($input->_id);
-
-            // prepare file row
-            $fileRow = (string)$input->_fileRow;
-            unset($input->_fileRow);
-
-            // prepare action
-            $action = (empty($id)) ? 'create' : 'update';
-
             try {
+                // prepare row
+                $input = $this->prepareRow($row, $data);
+
                 // begin transaction
                 $this->getEntityManager()->getPDO()->beginTransaction();
 
@@ -62,11 +83,19 @@ class DefaultHandler extends AbstractHandler
 
                 $this->getEntityManager()->getPDO()->commit();
             } catch (\Throwable $e) {
+                // roll back transaction
                 $this->getEntityManager()->getPDO()->rollBack();
-                $this->log($entityType, $importResultId, 'error', $fileRow, $e->getMessage());
+
+                // push log
+                $this->log($entityType, $importResultId, 'error', (string)$fileRow, $e->getMessage());
             }
+
             if (!is_null($entity)) {
-                $this->log($entityType, $importResultId, $action, $fileRow, $entity->get('id'));
+                // prepare action
+                $action = empty($id) ? 'create' : 'update';
+
+                // push log
+                $this->log($entityType, $importResultId, $action, (string)$fileRow, $entity->get('id'));
             }
         }
 
@@ -74,63 +103,24 @@ class DefaultHandler extends AbstractHandler
     }
 
     /**
-     * Prepare rows for saving
+     * Prepare row for saving
      *
-     * @param array $fileData
+     * @param array $row
      * @param array $data
      *
-     * @return array
+     * @return \stdClass
      * @throws Error
      */
-    protected function prepareRows(array $fileData, array $data): array
+    protected function prepareRow(array $row, array $data): \stdClass
     {
-        // prepare result
-        $result = [];
+        // create row
+        $inputRow = new \stdClass();
 
-        // prepare entity type
-        $entityType = (string)$data['data']['entity'];
-
-        // prepare id field
-        $idField = isset($data['data']['idField']) ? $data['data']['idField'] : null;
-
-        // find ID row
-        if (!empty($idRow = $this->getIdRow($data['data']['configuration'], $idField))) {
-            // find exists
-            $exists = $this->getExists($entityType, $idRow['name'], array_column($fileData, $idRow['column']));
+        // prepare row
+        foreach ($data['data']['configuration'] as $item) {
+            $this->convertItem($inputRow, (string)$data['data']['entity'], $item, $row, $data['data']['delimiter']);
         }
 
-        // prepare file row
-        $fileRow = (int)$data['offset'];
-
-        foreach ($fileData as $row) {
-            // increment file row number
-            $fileRow++;
-
-            // create row
-            $inputRow = new \stdClass();
-            $inputRow->_fileRow = $fileRow;
-            $inputRow->_id = (isset($exists[$row[$idRow['column']]])) ? $exists[$row[$idRow['column']]] : null;
-
-            // prepare row
-            foreach ($data['data']['configuration'] as $item) {
-                $this->convertItem($inputRow, $entityType, $item, $row, $data['data']['delimiter']);
-            }
-
-            // push to result
-            if ($data['action'] == 'create') {
-                // set id as null
-                $inputRow->_id = null;
-
-                $result[] = $inputRow;
-            }
-            if ($data['action'] == 'update' && !empty($inputRow->_id)) {
-                $result[] = $inputRow;
-            }
-            if ($data['action'] == 'create_update') {
-                $result[] = $inputRow;
-            }
-        }
-
-        return $result;
+        return $inputRow;
     }
 }
