@@ -69,11 +69,11 @@ class DefaultHandler extends AbstractHandler
             $entity = null;
 
             try {
-                // prepare row
-                $input = $this->prepareRow($row, $data);
-
                 // begin transaction
                 $this->getEntityManager()->getPDO()->beginTransaction();
+
+                // prepare row
+                $input = $this->prepareRow($row, $data);
 
                 if (empty($id)) {
                     $entity = $service->createEntity($input);
