@@ -6,7 +6,6 @@ namespace Import\Types\Simple\Handlers;
 
 use Espo\Core\ORM\EntityManager;
 use Espo\ORM\Entity;
-use Espo\Core\Exceptions\Error;
 use Treo\Core\Container;
 use Treo\Core\ServiceFactory;
 use Treo\Core\Utils\Metadata;
