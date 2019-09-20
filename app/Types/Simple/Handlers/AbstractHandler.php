@@ -19,9 +19,9 @@ use Treo\Core\Utils\Util;
 abstract class AbstractHandler
 {
     /**
-     * @var null
+     * @var Container
      */
-    protected $container = null;
+    protected $container;
 
     /**
      * AbstractHandler constructor.
@@ -47,13 +47,11 @@ abstract class AbstractHandler
      *
      * @return array|null
      */
-    protected function getIdRow(array $configuration, string $idField = null): ?array
+    protected function getIdRow(array $configuration, string $idField): ?array
     {
-        if (!empty($idField)) {
-            foreach ($configuration as $row) {
-                if ($row['name'] == $idField) {
-                    return $row;
-                }
+        foreach ($configuration as $row) {
+            if ($row['name'] == $idField) {
+                return $row;
             }
         }
 
@@ -97,9 +95,13 @@ abstract class AbstractHandler
      */
     protected function convertItem(\stdClass $inputRow, string $entityType, array $item, array $row, string $delimiter)
     {
+        // get converter
+        $converter = $this
+            ->getMetadata()
+            ->get(['import', 'simple', 'fields', $this->getType($entityType, $item), 'converter']);
+
         // delegate
-        if (!empty($converter
-            = $this->getMetadata()->get(['import', 'simple', 'fields', $this->getType($entityType, $item), 'converter']))) {
+        if (!empty($converter)) {
             return (new $converter($this->container))->convert($inputRow, $entityType, $item, $row, $delimiter);
         }
 
@@ -119,7 +121,7 @@ abstract class AbstractHandler
 
     /**
      * @param string $entityType
-     * @param array $item
+     * @param array  $item
      *
      * @return string|null
      */
