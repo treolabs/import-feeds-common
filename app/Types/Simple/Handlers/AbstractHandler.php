@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Import\Handlers;
+namespace Import\Types\Simple\Handlers;
 
 use Espo\Core\ORM\EntityManager;
 use Espo\ORM\Entity;
