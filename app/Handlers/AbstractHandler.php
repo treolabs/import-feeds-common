@@ -126,15 +126,7 @@ abstract class AbstractHandler
      */
     protected function getType(string $entityType, array $item): ?string
     {
-        $result = null;
-
-        if (isset($item['attributeId']) && isset($item['type'])) {
-            $result = $item['type'];
-        } else {
-            $result = (string)$this->getMetadata()->get(['entityDefs', $entityType, 'fields', $item['name'], 'type']);
-        }
-
-        return $result;
+        return (string)$this->getMetadata()->get(['entityDefs', $entityType, 'fields', $item['name'], 'type']);
     }
 
     /**
