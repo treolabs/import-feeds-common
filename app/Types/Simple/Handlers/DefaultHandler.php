@@ -30,7 +30,7 @@ class DefaultHandler extends AbstractHandler
         $service = $this->getServiceFactory()->create($entityType);
 
         // prepare id field
-        $idField = isset($data['data']['idField']) ? $data['data']['idField'] : null;
+        $idField = isset($data['data']['idField']) ? $data['data']['idField'] : "";
 
         // find ID row
         $idRow = $this->getIdRow($data['data']['configuration'], $idField);
