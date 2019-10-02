@@ -44,6 +44,12 @@ class DefaultHandler extends AbstractHandler
         // prepare file row
         $fileRow = (int)$data['offset'];
 
+        // prepare configuration
+        $conf = $data;
+        foreach ($conf['data']['configuration'] as $key => $item) {
+            $conf['data']['configuration'][$key]['column'] = $key;
+        }
+
         // save
         foreach ($fileData as $row) {
             // increment file row number
@@ -64,22 +70,34 @@ class DefaultHandler extends AbstractHandler
             }
 
             // prepare entity
-            $entity = null;
+            $entity = !empty($id) ? $this->getEntityManager()->getEntity($entityType, $id) : null;
 
             try {
                 // begin transaction
                 $this->getEntityManager()->getPDO()->beginTransaction();
 
-                // prepare row
+                // prepare row and data for restore
                 $input = new \stdClass();
-                foreach ($data['data']['configuration'] as $item) {
+                $restore = new \stdClass();
+
+                foreach ($data['data']['configuration'] as $key => $item) {
                     $this->convertItem($input, $entityType, $item, $row, $data['data']['delimiter']);
+
+                    if (!empty($entity)) {
+                        $this->convertRestore($restore, $entity, $conf['data']['configuration'][$key], $conf['data']['delimiter']);
+                    }
                 }
 
                 if (empty($id)) {
                     $entity = $service->createEntity($input);
+
+                    // save created entity
+                    $this->created[$entityType][] = $entity->get('id');
                 } else {
                     $entity = $service->updateEntity($id, $input);
+
+                    // save updated entity data
+                    $this->updated[] = $restore;
                 }
 
                 $this->getEntityManager()->getPDO()->commit();
@@ -99,6 +117,9 @@ class DefaultHandler extends AbstractHandler
                 $this->log($entityType, $importResultId, $action, (string)$fileRow, $entity->get('id'));
             }
         }
+
+        // save data for restore
+        $this->saveRestore($importResultId, $conf);
 
         return true;
     }
