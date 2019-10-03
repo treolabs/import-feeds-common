@@ -73,7 +73,7 @@ class DefaultHandler extends AbstractHandler
                 // begin transaction
                 $this->getEntityManager()->getPDO()->beginTransaction();
 
-                // prepare row
+                // prepare row and data for restore
                 $input = new \stdClass();
                 $restore = new \stdClass();
 
