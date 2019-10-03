@@ -44,6 +44,9 @@ class DefaultHandler extends AbstractHandler
         // prepare file row
         $fileRow = (int)$data['offset'];
 
+        // prepare data for restore
+        $restoreData = [];
+
         // save
         foreach ($fileData as $row) {
             // increment file row number
@@ -64,7 +67,7 @@ class DefaultHandler extends AbstractHandler
             }
 
             // prepare entity
-            $entity = null;
+            $entity = !empty($id) ? $this->getEntityManager()->getEntity($entityType, $id) : null;
 
             try {
                 // begin transaction
@@ -72,14 +75,24 @@ class DefaultHandler extends AbstractHandler
 
                 // prepare row
                 $input = new \stdClass();
+                $restore = new \stdClass();
+
                 foreach ($data['data']['configuration'] as $item) {
                     $this->convertItem($input, $entityType, $item, $row, $data['data']['delimiter']);
+
+                    if (!empty($entity)) {
+                        $this->prepareValue($restore, $entity, $item);
+                    }
                 }
 
                 if (empty($id)) {
                     $entity = $service->createEntity($input);
+
+                    $restoreData['created'][$entityType][] = $entity->get('id');
                 } else {
                     $entity = $service->updateEntity($id, $input);
+
+                    $restoreData['updated'][$entityType][$id] = $restore;
                 }
 
                 $this->getEntityManager()->getPDO()->commit();
@@ -99,6 +112,9 @@ class DefaultHandler extends AbstractHandler
                 $this->log($entityType, $importResultId, $action, (string)$fileRow, $entity->get('id'));
             }
         }
+
+        // save data for restore
+        $this->saveRestoreData($importResultId, $restoreData);
 
         return true;
     }
