@@ -63,10 +63,10 @@ class DefaultHandler extends AbstractHandler
                 $id = (isset($exists[$row[$idRow['column']]])) ? $exists[$row[$idRow['column']]] : null;
             }
 
-            // prepare entity
-            $entity = !empty($id) ? $this->getEntityManager()->getEntity($entityType, $id) : null;
-
             try {
+                // prepare entity
+                $entity = !empty($id) ? $this->getEntityManager()->getEntity($entityType, $id) : null;
+
                 // begin transaction
                 $this->getEntityManager()->getPDO()->beginTransaction();
 
@@ -85,11 +85,11 @@ class DefaultHandler extends AbstractHandler
                 if (empty($id)) {
                     $entity = $service->createEntity($input);
 
-                    $this->restore[] = ['action' => 'created', 'entity' => $entityType, 'data' => $entity->get('id')];
+                    $this->saveRestoreRow('created', $entityType, $entity->get('id'));
                 } else {
                     $entity = $service->updateEntity($id, $input);
 
-                    $this->restore = ['action' => 'updated', 'entity' => $entityType, 'data' => [$id => $restore]];
+                    $this->saveRestoreRow('updated', $entityType, [$id => $restore]);
                 }
 
                 $this->getEntityManager()->getPDO()->commit();
@@ -109,9 +109,6 @@ class DefaultHandler extends AbstractHandler
                 $this->log($entityType, $importResultId, $action, (string)$fileRow, $entity->get('id'));
             }
         }
-
-        // save data for restore
-        $this->saveRestoreData($importResultId);
 
         return true;
     }
