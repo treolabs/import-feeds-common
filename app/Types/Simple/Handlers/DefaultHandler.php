@@ -44,9 +44,6 @@ class DefaultHandler extends AbstractHandler
         // prepare file row
         $fileRow = (int)$data['offset'];
 
-        // prepare data for restore
-        $restoreData = [];
-
         // save
         foreach ($fileData as $row) {
             // increment file row number
@@ -88,11 +85,11 @@ class DefaultHandler extends AbstractHandler
                 if (empty($id)) {
                     $entity = $service->createEntity($input);
 
-                    $restoreData['created'][$entityType][] = $entity->get('id');
+                    $this->restore[] = ['action' => 'created', 'entity' => $entityType, 'data' => $entity->get('id')];
                 } else {
                     $entity = $service->updateEntity($id, $input);
 
-                    $restoreData['updated'][$entityType][$id] = $restore;
+                    $this->restore = ['action' => 'updated', 'entity' => $entityType, 'data' => [$id => $restore]];
                 }
 
                 $this->getEntityManager()->getPDO()->commit();
@@ -114,7 +111,7 @@ class DefaultHandler extends AbstractHandler
         }
 
         // save data for restore
-        $this->saveRestoreData($importResultId, $restoreData);
+        $this->saveRestoreData($importResultId);
 
         return true;
     }

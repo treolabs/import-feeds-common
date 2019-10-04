@@ -27,12 +27,7 @@ abstract class AbstractHandler
     /**
      * @var array
      */
-    protected $created = [];
-
-    /**
-     * @var array
-     */
-    protected $updated = [];
+    protected $restore = [];
 
     /**
      * AbstractHandler constructor.
@@ -192,14 +187,14 @@ abstract class AbstractHandler
 
     /**
      * @param string $importResultId
-     * @param array $data
      *
      * @throws \Espo\Core\Exceptions\Error
      */
-    protected function saveRestoreData(string $importResultId, array $data)
+    protected function saveRestoreData(string $importResultId)
     {
         if (!empty($importResult = $this->getEntityManager()->getEntity('ImportResult', $importResultId))) {
-            $importResult->set('restoreData', $data);
+            $exists = !empty($importResult->get('restoreData')) ? $importResult->get('restoreData') : [];
+            $importResult->set('restoreData', array_merge($exists, $this->restore));
             $this->getEntityManager()->saveEntity($importResult);
         }
     }
