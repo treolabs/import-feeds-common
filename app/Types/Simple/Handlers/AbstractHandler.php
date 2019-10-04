@@ -10,6 +10,7 @@ use Treo\Core\Container;
 use Treo\Core\ServiceFactory;
 use Treo\Core\Utils\Metadata;
 use Treo\Core\Utils\Util;
+use Espo\Core\Exceptions\Error;
 
 /**
  * Class AbstractHandler
@@ -22,6 +23,11 @@ abstract class AbstractHandler
      * @var Container
      */
     protected $container;
+
+    /**
+     * @var array
+     */
+    protected $restore = [];
 
     /**
      * AbstractHandler constructor.
@@ -120,6 +126,26 @@ abstract class AbstractHandler
     }
 
     /**
+     * @param \stdClass $restore
+     * @param Entity $entity
+     * @param array $item
+     */
+    protected function prepareValue(\stdClass $restore, Entity $entity, array $item)
+    {
+        // get converter
+        $converter = $this
+            ->getMetadata()
+            ->get(['import', 'simple', 'fields', $this->getType($entity->getEntityType(), $item), 'converter']);
+
+        // delegate
+        if (!empty($converter)) {
+            return (new $converter($this->container))->prepareValue($restore, $entity, $item);
+        }
+
+        $restore->{$item['name']} = $entity->get($item['name']);
+    }
+
+    /**
      * @param string $entityType
      * @param array  $item
      *
@@ -157,6 +183,20 @@ abstract class AbstractHandler
         $this->getEntityManager()->saveEntity($log);
 
         return $log;
+    }
+
+    /**
+     * @param string $importResultId
+     *
+     * @throws \Espo\Core\Exceptions\Error
+     */
+    protected function saveRestoreData(string $importResultId)
+    {
+        if (!empty($importResult = $this->getEntityManager()->getEntity('ImportResult', $importResultId))) {
+            $exists = !empty($importResult->get('restoreData')) ? $importResult->get('restoreData') : [];
+            $importResult->set('restoreData', array_merge($exists, $this->restore));
+            $this->getEntityManager()->saveEntity($importResult);
+        }
     }
 
     /**

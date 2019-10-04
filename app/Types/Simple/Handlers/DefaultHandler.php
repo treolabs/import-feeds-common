@@ -64,22 +64,32 @@ class DefaultHandler extends AbstractHandler
             }
 
             // prepare entity
-            $entity = null;
+            $entity = !empty($id) ? $this->getEntityManager()->getEntity($entityType, $id) : null;
 
             try {
                 // begin transaction
                 $this->getEntityManager()->getPDO()->beginTransaction();
 
-                // prepare row
+                // prepare row and data for restore
                 $input = new \stdClass();
+                $restore = new \stdClass();
+
                 foreach ($data['data']['configuration'] as $item) {
                     $this->convertItem($input, $entityType, $item, $row, $data['data']['delimiter']);
+
+                    if (!empty($entity)) {
+                        $this->prepareValue($restore, $entity, $item);
+                    }
                 }
 
                 if (empty($id)) {
                     $entity = $service->createEntity($input);
+
+                    $this->restore[] = ['action' => 'created', 'entity' => $entityType, 'data' => $entity->get('id')];
                 } else {
                     $entity = $service->updateEntity($id, $input);
+
+                    $this->restore = ['action' => 'updated', 'entity' => $entityType, 'data' => [$id => $restore]];
                 }
 
                 $this->getEntityManager()->getPDO()->commit();
@@ -99,6 +109,9 @@ class DefaultHandler extends AbstractHandler
                 $this->log($entityType, $importResultId, $action, (string)$fileRow, $entity->get('id'));
             }
         }
+
+        // save data for restore
+        $this->saveRestoreData($importResultId);
 
         return true;
     }
