@@ -224,45 +224,4 @@ abstract class AbstractHandler
     {
         return $this->container->get('metadata');
     }
-
-    /**
-     * @param \stdClass $restoreRow
-     * @param Entity $entity
-     * @param array $item
-     * @param string $delimiter
-     */
-    protected function convertRestore(\stdClass $restoreRow, Entity $entity, array $item, string $delimiter)
-    {
-        // get converter
-        $converter = $this
-            ->getMetadata()
-            ->get(['import', 'simple', 'fields', $this->getType($entity->getEntityType(), $item), 'converter']);
-
-        // delegate
-        if (!empty($converter)) {
-            return (new $converter($this->container))->revert($restoreRow, $entity, $item, $delimiter);
-        } else {
-            $value = $entity->get($item['name']);
-        }
-
-        // set
-        $restoreRow->{$item['column']} = $value;
-    }
-
-    /**
-     * @param string $importResultId
-     * @param array $conf
-     * @throws Error
-     */
-    protected function saveRestore(string $importResultId, array $conf)
-    {
-        // prepare import result
-        $importResult = $this->getEntityManager()->getEntity('ImportResult', $importResultId);
-
-        $importResult->set('created', $this->created);
-        $importResult->set('updated', $this->updated);
-        $importResult->set('configuration', $conf);
-
-        $this->getEntityManager()->saveEntity($importResult);
-    }
 }
