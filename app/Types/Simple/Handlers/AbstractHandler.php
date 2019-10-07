@@ -178,6 +178,7 @@ abstract class AbstractHandler
             $log->set('message', $data);
         } else {
             $log->set('entityId', $data);
+            $log->set('restoreData', $this->restore);
         }
 
         $this->getEntityManager()->saveEntity($log);
@@ -186,17 +187,17 @@ abstract class AbstractHandler
     }
 
     /**
-     * @param string $importResultId
-     *
-     * @throws \Espo\Core\Exceptions\Error
+     * @param string $action
+     * @param string $entityType
+     * @param $data
      */
-    protected function saveRestoreData(string $importResultId)
+    protected function saveRestoreRow(string $action, string $entityType, $data)
     {
-        if (!empty($importResult = $this->getEntityManager()->getEntity('ImportResult', $importResultId))) {
-            $exists = !empty($importResult->get('restoreData')) ? $importResult->get('restoreData') : [];
-            $importResult->set('restoreData', array_merge($exists, $this->restore));
-            $this->getEntityManager()->saveEntity($importResult);
-        }
+        $this->restore[] = [
+            'action'    => $action,
+            'entity'    => $entityType,
+            'data'      => $data
+        ];
     }
 
     /**
