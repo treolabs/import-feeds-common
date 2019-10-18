@@ -73,11 +73,13 @@ abstract class AbstractHandler
      */
     protected function getExists(string $entityType, string $name, array $ids): array
     {
+        $select = ($name == 'id') ? [$name] : ['id', $name];
+
         // get data
         $data = $this
             ->getEntityManager()
             ->getRepository($entityType)
-            ->select(['id', $name])
+            ->select($select)
             ->where([$name => $ids])
             ->find();
 

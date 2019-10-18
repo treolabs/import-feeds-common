@@ -75,6 +75,10 @@ class DefaultHandler extends AbstractHandler
                 $restore = new \stdClass();
 
                 foreach ($data['data']['configuration'] as $item) {
+                    if ($item['name'] == 'id') {
+                        continue;
+                    }
+
                     $this->convertItem($input, $entityType, $item, $row, $data['data']['delimiter']);
 
                     if (!empty($entity)) {
