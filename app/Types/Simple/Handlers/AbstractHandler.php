@@ -114,7 +114,7 @@ abstract class AbstractHandler
         }
 
         // prepare value
-        if (is_null($item['column']) || empty($row[$item['column']])) {
+        if (is_null($item['column']) || $row[$item['column']] == '') {
             $value = $item['default'];
             if (!empty($value) && is_string($value)) {
                 $value = str_replace("{{hash}}", Util::generateId(), $value);
