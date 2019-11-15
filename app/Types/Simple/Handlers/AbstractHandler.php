@@ -8,6 +8,7 @@ use Espo\Core\ORM\EntityManager;
 use Espo\ORM\Entity;
 use Treo\Core\Container;
 use Treo\Core\ServiceFactory;
+use Treo\Core\Utils\Config;
 use Treo\Core\Utils\Metadata;
 use Treo\Core\Utils\Util;
 use Espo\Core\Exceptions\Error;
@@ -226,5 +227,13 @@ abstract class AbstractHandler
     protected function getMetadata(): Metadata
     {
         return $this->container->get('metadata');
+    }
+
+    /**
+     * @return Config
+     */
+    protected function getConfig(): Config
+    {
+        return $this->container->get('config');
     }
 }
