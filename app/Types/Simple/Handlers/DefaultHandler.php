@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Import\Types\Simple\Handlers;
 
 use Espo\Core\Exceptions\Error;
-use Treo\Core\Utils\Util;
 
 /**
  * Class DefaultHandler
@@ -76,20 +75,8 @@ class DefaultHandler extends AbstractHandler
                 $restore = new \stdClass();
 
                 foreach ($data['data']['configuration'] as $item) {
-                    $field = $item['name'];
-
-                    if ($field == 'id') {
+                    if ($item['name'] == 'id') {
                         continue;
-                    }
-
-                    // check for multiLang fields
-                    if (isset($item['locale']) && !is_null($item['locale'])) {
-                        if ($this->getConfig()->get('isMultilangActive')) {
-                            $field .= Util::toCamelCase(strtolower($item['locale']), '_', true);
-                            $item['name'] = $field;
-                        } else {
-                            continue;
-                        }
                     }
 
                     $this->convertItem($input, $entityType, $item, $row, $data['data']['delimiter']);
