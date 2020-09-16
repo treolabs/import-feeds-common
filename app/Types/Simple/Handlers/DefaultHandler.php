@@ -86,12 +86,13 @@ class DefaultHandler extends AbstractHandler
                     }
                 }
 
+                $updatedEntity = null;
                 if (empty($id)) {
-                    $entity = $service->createEntity($input);
+                    $updatedEntity = $service->createEntity($input);
 
-                    $this->saveRestoreRow('created', $entityType, $entity->get('id'));
+                    $this->saveRestoreRow('created', $entityType, $updatedEntity->get('id'));
                 } else {
-                    $entity = $service->updateEntity($id, $input);
+                    $updatedEntity = $service->updateEntity($id, $input);
 
                     $this->saveRestoreRow('updated', $entityType, [$id => $restore]);
                 }
@@ -105,12 +106,12 @@ class DefaultHandler extends AbstractHandler
                 $this->log($entityType, $importResultId, 'error', (string)$fileRow, $e->getMessage());
             }
 
-            if (!is_null($entity)) {
+            if (!empty($updatedEntity)) {
                 // prepare action
                 $action = empty($id) ? 'create' : 'update';
 
                 // push log
-                $this->log($entityType, $importResultId, $action, (string)$fileRow, $entity->get('id'));
+                $this->log($entityType, $importResultId, $action, (string)$fileRow, $updatedEntity->get('id'));
             }
         }
 
