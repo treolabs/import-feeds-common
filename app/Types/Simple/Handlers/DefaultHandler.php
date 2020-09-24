@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Import\Types\Simple\Handlers;
 
 use Espo\Core\Exceptions\Error;
+use Espo\Core\Exceptions\Forbidden;
 
 /**
  * Class DefaultHandler
@@ -102,8 +103,14 @@ class DefaultHandler extends AbstractHandler
                 // roll back transaction
                 $this->getEntityManager()->getPDO()->rollBack();
 
+                // prepare message
+                $message = $e->getMessage();
+                if (get_class($e) == Forbidden::class && empty($message)) {
+                    $message = 'Permission denied';
+                }
+
                 // push log
-                $this->log($entityType, $importResultId, 'error', (string)$fileRow, $e->getMessage());
+                $this->log($entityType, $importResultId, 'error', (string)$fileRow, $message);
             }
 
             if (!empty($updatedEntity)) {
